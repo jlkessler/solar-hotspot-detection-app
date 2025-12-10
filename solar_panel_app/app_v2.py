@@ -1,62 +1,42 @@
+from huggingface_hub import hf_hub_download
 import streamlit as st
 import torch
-import torchvision
 from torchvision.models.detection import fasterrcnn_resnet50_fpn
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 from torchvision.ops import nms
 from PIL import Image
-import matplotlib.pyplot as plt
 import torchvision.transforms as T
-import os
-import requests
-
-# ---------------------------------------------------------
-# CONFIGURE GOOGLE DRIVE (OR OTHER HOSTING)
-# ---------------------------------------------------------
-MODEL_URL = "https://drive.google.com/file/d/1ZeaCvcou2Tooje882jgZFMzvhs1s_g4i/view?usp=sharing"
-MODEL_PATH = "models/hotspot_detector.pth"
+import matplotlib.pyplot as plt
 
 
-# ---------------------------------------------------------
-# DOWNLOAD MODEL IF MISSING
-# ---------------------------------------------------------
-def download_model_if_missing():
-    """Downloads the model from Google Drive if it is not present."""
-    if not os.path.exists("models"):
-        os.makedirs("models")
-
-    if not os.path.exists(MODEL_PATH):
-        print("Model not found — downloading...")
-        with open(MODEL_PATH, "wb") as f:
-            response = requests.get(MODEL_URL)
-            f.write(response.content)
-        print("Model downloaded successfully.")
+REPO_ID = "jlkessler/hotspot_detector"
+FILENAME = "hotspot_detector.pth"
 
 
-# ---------------------------------------------------------
-# LOAD MODEL
-# ---------------------------------------------------------
 @st.cache_resource
 def load_hotspot_model():
-    download_model_if_missing()   # <— ENSURE MODEL IS AVAILABLE
+    # HuggingFace will download the file if missing
+    checkpoint_path = hf_hub_download(
+        repo_id=REPO_ID,
+        filename=FILENAME,
+        cache_dir="."
+    )
 
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    num_classes = 2
 
-    num_classes = 2  # background + hotspot
-
-    # Base Faster R-CNN
+    # Load Faster R-CNN base
     model = fasterrcnn_resnet50_fpn(weights=None)
-
-    # Replace head to match num_classes
     in_features = model.roi_heads.box_predictor.cls_score.in_features
     model.roi_heads.box_predictor = FastRCNNPredictor(in_features, num_classes)
 
-    # Load state dict from downloaded model
-    state_dict = torch.load(MODEL_PATH, map_location=device)
+    # Load weights
+    state_dict = torch.load(checkpoint_path, map_location=device)
     model.load_state_dict(state_dict)
 
     model.to(device)
     model.eval()
+
     return model, device
 
 
