@@ -13,7 +13,7 @@ import requests
 # ---------------------------------------------------------
 # CONFIGURE GOOGLE DRIVE (OR OTHER HOSTING)
 # ---------------------------------------------------------
-MODEL_URL = "https://drive.google.com/file/d/1ZeaCvcou2Tooje882jgZFMzvhs1s_g4i/view?usp=drive_link"
+MODEL_URL = "https://drive.google.com/file/d/1ZeaCvcou2Tooje882jgZFMzvhs1s_g4i/view?usp=sharing"
 MODEL_PATH = "models/hotspot_detector.pth"
 
 
